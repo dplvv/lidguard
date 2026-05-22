@@ -20,9 +20,9 @@ enum PMSetService {
         var appleScriptSource: String {
             switch self {
             case .enableNoSleep:
-                return #"do shell script "/usr/bin/pmset -a disablesleep 1" with prompt "LidGuard запрашивает права администратора для отключения сна при закрытой крышке." with administrator privileges"#
+                return #"do shell script "/usr/bin/pmset -a disablesleep 1" with prompt "LidGuard запрашивает права администратора, чтобы отключить сон при закрытой крышке." with administrator privileges"#
             case .disableNoSleep:
-                return #"do shell script "/usr/bin/pmset -a disablesleep 0" with prompt "LidGuard запрашивает права администратора для отключения сна при закрытой крышке." with administrator privileges"#
+                return #"do shell script "/usr/bin/pmset -a disablesleep 0" with prompt "LidGuard запрашивает права администратора, чтобы вернуть стандартный режим сна." with administrator privileges"#
             }
         }
     }
@@ -89,82 +89,213 @@ enum PMSetService {
     }
 }
 
-enum Palette {
-    static let bgTop = NSColor(name: nil) { appearance in
+enum ThemePalette {
+    static let windowTop = NSColor(name: nil) { appearance in
         if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
-            return NSColor(calibratedRed: 0.10, green: 0.12, blue: 0.16, alpha: 1.0)
+            return NSColor(calibratedRed: 0.12, green: 0.15, blue: 0.20, alpha: 1.0)
         }
-        return NSColor(calibratedRed: 0.93, green: 0.96, blue: 1.00, alpha: 1.0)
+        return NSColor(calibratedRed: 0.95, green: 0.97, blue: 1.00, alpha: 1.0)
     }
 
-    static let bgBottom = NSColor(name: nil) { appearance in
+    static let windowBottom = NSColor(name: nil) { appearance in
         if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
-            return NSColor(calibratedRed: 0.14, green: 0.18, blue: 0.24, alpha: 1.0)
+            return NSColor(calibratedRed: 0.09, green: 0.12, blue: 0.17, alpha: 1.0)
         }
-        return NSColor(calibratedRed: 0.83, green: 0.90, blue: 0.99, alpha: 1.0)
+        return NSColor(calibratedRed: 0.90, green: 0.94, blue: 0.99, alpha: 1.0)
+    }
+
+    static let windowFrame = NSColor(name: nil) { appearance in
+        if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+            return NSColor(calibratedWhite: 1.0, alpha: 0.13)
+        }
+        return NSColor(calibratedRed: 0.70, green: 0.78, blue: 0.88, alpha: 0.55)
     }
 
     static let cardBackground = NSColor(name: nil) { appearance in
         if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
-            return NSColor(calibratedWhite: 0.16, alpha: 0.92)
+            return NSColor(calibratedRed: 0.14, green: 0.18, blue: 0.25, alpha: 0.93)
         }
-        return NSColor(calibratedWhite: 1.0, alpha: 0.85)
+        return NSColor(calibratedWhite: 1.0, alpha: 0.88)
     }
 
     static let cardBorder = NSColor(name: nil) { appearance in
         if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
-            return NSColor(calibratedWhite: 1.0, alpha: 0.20)
+            return NSColor(calibratedWhite: 1.0, alpha: 0.18)
         }
-        return NSColor(calibratedWhite: 1.0, alpha: 0.95)
+        return NSColor(calibratedRed: 0.68, green: 0.77, blue: 0.88, alpha: 0.62)
     }
 
-    static let textMain = NSColor.labelColor
-    static let textSubtle = NSColor.secondaryLabelColor
+    static let textPrimary = NSColor.labelColor
+    static let textSecondary = NSColor.secondaryLabelColor
+    static let textMuted = NSColor.tertiaryLabelColor
 
-    static let buttonOn = NSColor.systemBlue
-    static let buttonOff = NSColor.systemGray
-    static let statusOK = NSColor.systemGreen
-    static let statusWarn = NSColor.systemOrange
+    static let actionPrimary = NSColor(name: nil) { appearance in
+        if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+            return NSColor(calibratedRed: 0.20, green: 0.63, blue: 0.40, alpha: 1.0)
+        }
+        return NSColor(calibratedRed: 0.09, green: 0.56, blue: 0.31, alpha: 1.0)
+    }
+
+    static let actionSecondary = NSColor(name: nil) { appearance in
+        if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+            return NSColor(calibratedRed: 0.23, green: 0.30, blue: 0.40, alpha: 1.0)
+        }
+        return NSColor(calibratedRed: 0.86, green: 0.91, blue: 0.97, alpha: 1.0)
+    }
+
+    static let actionSecondaryBorder = NSColor(name: nil) { appearance in
+        if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+            return NSColor(calibratedWhite: 1.0, alpha: 0.22)
+        }
+        return NSColor(calibratedRed: 0.64, green: 0.73, blue: 0.85, alpha: 0.65)
+    }
+
+    static func resolved(_ color: NSColor, in appearance: NSAppearance) -> NSColor {
+        var resolvedColor = color
+        appearance.performAsCurrentDrawingAppearance {
+            resolvedColor = color
+        }
+        return resolvedColor
+    }
+
+    static func cgColor(_ color: NSColor, in appearance: NSAppearance) -> CGColor {
+        resolved(color, in: appearance).cgColor
+    }
 }
 
-final class CompactBackgroundView: NSView {
+final class GradientBackgroundView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
-        if let gradient = NSGradient(colorsAndLocations: (Palette.bgTop, 0.0), (Palette.bgBottom, 1.0)) {
+        if let gradient = NSGradient(colorsAndLocations: (ThemePalette.windowTop, 0.0), (ThemePalette.windowBottom, 1.0)) {
             gradient.draw(in: bounds, angle: -90)
         }
 
-        let bubbleTopRight = NSBezierPath(ovalIn: NSRect(x: bounds.maxX - 170, y: bounds.maxY - 130, width: 120, height: 120))
-        NSColor.systemBlue.withAlphaComponent(0.15).setFill()
-        bubbleTopRight.fill()
+        let framePath = NSBezierPath(roundedRect: bounds.insetBy(dx: 12, dy: 12), xRadius: 22, yRadius: 22)
+        ThemePalette.windowFrame.setStroke()
+        framePath.lineWidth = 1
+        framePath.stroke()
 
-        let bubbleBottomLeft = NSBezierPath(ovalIn: NSRect(x: bounds.minX - 40, y: bounds.minY - 45, width: 120, height: 120))
-        NSColor.systemTeal.withAlphaComponent(0.14).setFill()
-        bubbleBottomLeft.fill()
+        let guideLine = NSBezierPath()
+        guideLine.move(to: NSPoint(x: 42, y: bounds.midY + 32))
+        guideLine.line(to: NSPoint(x: bounds.maxX - 42, y: bounds.midY + 32))
+        ThemePalette.windowFrame.withAlphaComponent(0.65).setStroke()
+        guideLine.lineWidth = 1
+        guideLine.stroke()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
     }
 }
 
 @MainActor
 final class MainWindowController: NSWindowController {
+    private enum StatusStyle {
+        case neutral
+        case enabled
+        case disabled
+        case warning
+
+        var background: NSColor {
+            switch self {
+            case .neutral:
+                return NSColor(name: nil) { appearance in
+                    if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+                        return NSColor(calibratedWhite: 1.0, alpha: 0.09)
+                    }
+                    return NSColor(calibratedRed: 0.88, green: 0.92, blue: 0.97, alpha: 0.9)
+                }
+            case .enabled:
+                return NSColor(name: nil) { appearance in
+                    if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+                        return NSColor(calibratedRed: 0.16, green: 0.35, blue: 0.24, alpha: 0.9)
+                    }
+                    return NSColor(calibratedRed: 0.84, green: 0.95, blue: 0.88, alpha: 1.0)
+                }
+            case .disabled:
+                return NSColor(name: nil) { appearance in
+                    if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+                        return NSColor(calibratedRed: 0.17, green: 0.27, blue: 0.38, alpha: 0.9)
+                    }
+                    return NSColor(calibratedRed: 0.85, green: 0.91, blue: 0.98, alpha: 1.0)
+                }
+            case .warning:
+                return NSColor(name: nil) { appearance in
+                    if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+                        return NSColor(calibratedRed: 0.37, green: 0.27, blue: 0.14, alpha: 0.9)
+                    }
+                    return NSColor(calibratedRed: 0.98, green: 0.92, blue: 0.79, alpha: 1.0)
+                }
+            }
+        }
+
+        var dot: NSColor {
+            switch self {
+            case .neutral:
+                return .secondaryLabelColor
+            case .enabled:
+                return NSColor.systemGreen
+            case .disabled:
+                return NSColor.systemBlue
+            case .warning:
+                return NSColor.systemOrange
+            }
+        }
+
+        var text: NSColor {
+            switch self {
+            case .warning:
+                return NSColor(name: nil) { appearance in
+                    if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+                        return NSColor(calibratedRed: 1.0, green: 0.91, blue: 0.67, alpha: 1.0)
+                    }
+                    return NSColor(calibratedRed: 0.47, green: 0.31, blue: 0.04, alpha: 1.0)
+                }
+            case .neutral, .enabled, .disabled:
+                return ThemePalette.textPrimary
+            }
+        }
+    }
+
+    private let cardView = NSView()
+    private let titleLabel = NSTextField(labelWithString: "Управление режимом сна")
+    private let subtitleLabel = NSTextField(wrappingLabelWithString: "LidGuard меняет параметр SleepDisabled и применяет команды через стандартный запрос администратора.")
+    private let stateCaptionLabel = NSTextField(labelWithString: "Текущее состояние")
+    private let statusContainer = NSView()
+    private let statusDot = NSView()
     private let statusLabel = NSTextField(wrappingLabelWithString: "")
-    private let enableButton = NSButton(title: "Включить режим", target: nil, action: nil)
-    private let disableButton = NSButton(title: "Выключить", target: nil, action: nil)
+    private let hintLabel = NSTextField(wrappingLabelWithString: "Изменения применяются для всей системы macOS.")
+    private let enableButton = NSButton(title: "Не усыплять при закрытии", target: nil, action: nil)
+    private let disableButton = NSButton(title: "Включить стандартный сон", target: nil, action: nil)
+    private let refreshButton = NSButton(title: "Обновить статус", target: nil, action: nil)
+
+    private var statusStyle: StatusStyle = .neutral
+    private var appearanceObserver: NSKeyValueObservation?
 
     init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 470, height: 290),
+            contentRect: NSRect(x: 0, y: 0, width: 560, height: 360),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
         window.title = "LidGuard"
         window.center()
-        window.contentView = CompactBackgroundView(frame: window.frame)
+        window.minSize = NSSize(width: 560, height: 360)
+        window.contentView = GradientBackgroundView(frame: window.frame)
 
         super.init(window: window)
         configureUI()
-        setStatus("Нажмите кнопку для изменения режима.", color: Palette.textSubtle)
+        appearanceObserver = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            DispatchQueue.main.async {
+                self?.applyTheme()
+            }
+        }
+        applyTheme()
+        setStatus("Проверяем текущее значение SleepDisabled…", style: .neutral)
+        refreshStatus(showErrorAlert: false)
     }
 
     @available(*, unavailable)
@@ -175,89 +306,146 @@ final class MainWindowController: NSWindowController {
     private func configureUI() {
         guard let contentView = window?.contentView else { return }
 
-        let card = NSView()
-        card.translatesAutoresizingMaskIntoConstraints = false
-        card.wantsLayer = true
-        card.layer?.cornerRadius = 18
-        card.layer?.borderWidth = 1
-        let appearance = contentView.effectiveAppearance
-        var resolvedBackground = Palette.cardBackground
-        var resolvedBorder = Palette.cardBorder
-        appearance.performAsCurrentDrawingAppearance {
-            resolvedBackground = Palette.cardBackground
-            resolvedBorder = Palette.cardBorder
-        }
-        card.layer?.backgroundColor = resolvedBackground.cgColor
-        card.layer?.borderColor = resolvedBorder.cgColor
+        cardView.translatesAutoresizingMaskIntoConstraints = false
+        cardView.wantsLayer = true
+        cardView.layer?.cornerRadius = 22
+        cardView.layer?.borderWidth = 1
+        cardView.layer?.shadowOpacity = 0.16
+        cardView.layer?.shadowRadius = 14
+        cardView.layer?.shadowOffset = CGSize(width: 0, height: 7)
 
-        let titleLabel = NSTextField(labelWithString: "Сон при закрытой крышке")
-        titleLabel.font = NSFont(name: "Avenir Next Demi Bold", size: 24) ?? NSFont.systemFont(ofSize: 24, weight: .bold)
-        titleLabel.textColor = Palette.textMain
+        titleLabel.font = NSFont.systemFont(ofSize: 25, weight: .bold)
+        subtitleLabel.font = NSFont.systemFont(ofSize: 14, weight: .regular)
+        subtitleLabel.maximumNumberOfLines = 3
+        stateCaptionLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        hintLabel.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+        hintLabel.maximumNumberOfLines = 2
 
-        let subtitleLabel = NSTextField(wrappingLabelWithString: "Включайте или отключайте режим через pmset в один клик.")
-        subtitleLabel.font = NSFont(name: "Avenir Next Regular", size: 13) ?? NSFont.systemFont(ofSize: 13, weight: .regular)
-        subtitleLabel.textColor = Palette.textSubtle
-        subtitleLabel.maximumNumberOfLines = 2
+        statusContainer.translatesAutoresizingMaskIntoConstraints = false
+        statusContainer.wantsLayer = true
+        statusContainer.layer?.cornerRadius = 12
+        statusContainer.layer?.borderWidth = 1
 
-        statusLabel.font = NSFont(name: "Avenir Next Demi Bold", size: 13) ?? NSFont.systemFont(ofSize: 13, weight: .semibold)
+        statusDot.translatesAutoresizingMaskIntoConstraints = false
+        statusDot.wantsLayer = true
+        statusDot.layer?.cornerRadius = 5
+
+        statusLabel.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
         statusLabel.maximumNumberOfLines = 2
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        configureButton(enableButton, color: Palette.buttonOn, action: #selector(enablePressed))
-        configureButton(disableButton, color: Palette.buttonOff, action: #selector(disablePressed))
+        let statusRow = NSStackView(views: [statusDot, statusLabel])
+        statusRow.orientation = .horizontal
+        statusRow.spacing = 8
+        statusRow.alignment = .centerY
+        statusRow.translatesAutoresizingMaskIntoConstraints = false
 
-        let buttonsRow = NSStackView(views: [enableButton, disableButton])
-        buttonsRow.orientation = .horizontal
-        buttonsRow.spacing = 10
-        buttonsRow.distribution = .fillEqually
+        statusContainer.addSubview(statusRow)
 
-        let stack = NSStackView(views: [titleLabel, subtitleLabel, statusLabel, buttonsRow])
+        configurePrimaryButton(enableButton, action: #selector(enablePressed))
+        configureSecondaryButton(disableButton, action: #selector(disablePressed))
+
+        refreshButton.bezelStyle = .rounded
+        refreshButton.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        refreshButton.target = self
+        refreshButton.action = #selector(refreshPressed)
+        refreshButton.keyEquivalent = "r"
+        refreshButton.keyEquivalentModifierMask = [.command]
+
+        let actionsRow = NSStackView(views: [enableButton, disableButton])
+        actionsRow.orientation = .horizontal
+        actionsRow.spacing = 10
+        actionsRow.distribution = .fillEqually
+
+        let stack = NSStackView(views: [titleLabel, subtitleLabel, stateCaptionLabel, statusContainer, hintLabel, actionsRow, refreshButton])
         stack.orientation = .vertical
         stack.spacing = 12
         stack.alignment = .leading
         stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.setCustomSpacing(8, after: stateCaptionLabel)
+        stack.setCustomSpacing(10, after: statusContainer)
+        stack.setCustomSpacing(16, after: hintLabel)
 
-        contentView.addSubview(card)
-        card.addSubview(stack)
+        contentView.addSubview(cardView)
+        cardView.addSubview(stack)
 
         NSLayoutConstraint.activate([
-            card.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            card.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            card.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-            card.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
+            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
 
-            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
-            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
-            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
+            stack.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 22),
+            stack.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -22),
+            stack.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 20),
+            stack.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -20),
 
-            buttonsRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            enableButton.heightAnchor.constraint(equalToConstant: 36),
-            disableButton.heightAnchor.constraint(equalToConstant: 36)
+            statusRow.leadingAnchor.constraint(equalTo: statusContainer.leadingAnchor, constant: 12),
+            statusRow.trailingAnchor.constraint(equalTo: statusContainer.trailingAnchor, constant: -12),
+            statusRow.topAnchor.constraint(equalTo: statusContainer.topAnchor, constant: 10),
+            statusRow.bottomAnchor.constraint(equalTo: statusContainer.bottomAnchor, constant: -10),
+
+            statusDot.widthAnchor.constraint(equalToConstant: 10),
+            statusDot.heightAnchor.constraint(equalToConstant: 10),
+
+            actionsRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            enableButton.heightAnchor.constraint(equalToConstant: 40),
+            disableButton.heightAnchor.constraint(equalToConstant: 40)
         ])
     }
 
-    private func configureButton(_ button: NSButton, color: NSColor, action: Selector) {
-        button.font = NSFont(name: "Avenir Next Demi Bold", size: 14) ?? NSFont.systemFont(ofSize: 14, weight: .semibold)
+    private func configurePrimaryButton(_ button: NSButton, action: Selector) {
+        button.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
         button.setButtonType(.momentaryLight)
         button.isBordered = false
         button.wantsLayer = true
-        button.layer?.cornerRadius = 10
-        button.layer?.backgroundColor = color.cgColor
-        button.contentTintColor = .white
+        button.layer?.cornerRadius = 11
         button.target = self
         button.action = action
+    }
+
+    private func configureSecondaryButton(_ button: NSButton, action: Selector) {
+        configurePrimaryButton(button, action: action)
+        button.layer?.borderWidth = 1
+    }
+
+    private func applyTheme() {
+        guard let appearance = window?.contentView?.effectiveAppearance else { return }
+
+        cardView.layer?.backgroundColor = ThemePalette.cgColor(ThemePalette.cardBackground, in: appearance)
+        cardView.layer?.borderColor = ThemePalette.cgColor(ThemePalette.cardBorder, in: appearance)
+        cardView.layer?.shadowColor = ThemePalette.cgColor(NSColor.black.withAlphaComponent(0.35), in: appearance)
+
+        titleLabel.textColor = ThemePalette.textPrimary
+        subtitleLabel.textColor = ThemePalette.textSecondary
+        stateCaptionLabel.textColor = ThemePalette.textMuted
+        hintLabel.textColor = ThemePalette.textSecondary
+
+        enableButton.layer?.backgroundColor = ThemePalette.cgColor(ThemePalette.actionPrimary, in: appearance)
+        enableButton.contentTintColor = .white
+
+        disableButton.layer?.backgroundColor = ThemePalette.cgColor(ThemePalette.actionSecondary, in: appearance)
+        disableButton.layer?.borderColor = ThemePalette.cgColor(ThemePalette.actionSecondaryBorder, in: appearance)
+        disableButton.contentTintColor = ThemePalette.resolved(ThemePalette.textPrimary, in: appearance)
+
+        refreshButton.contentTintColor = ThemePalette.resolved(ThemePalette.textSecondary, in: appearance)
+        refreshButton.bezelColor = ThemePalette.resolved(ThemePalette.actionSecondary, in: appearance)
+
+        statusContainer.layer?.backgroundColor = ThemePalette.cgColor(statusStyle.background, in: appearance)
+        statusContainer.layer?.borderColor = ThemePalette.cgColor(ThemePalette.cardBorder.withAlphaComponent(0.7), in: appearance)
+        statusDot.layer?.backgroundColor = ThemePalette.cgColor(statusStyle.dot, in: appearance)
+        statusLabel.textColor = ThemePalette.resolved(statusStyle.text, in: appearance)
+    }
+
+    override func windowDidLoad() {
+        super.windowDidLoad()
+        applyTheme()
     }
 
     @objc private func enablePressed() {
         do {
             try PMSetService.enableNoSleep()
-            let value = try PMSetService.readSleepDisabled()
-            if value == 1 {
-                setStatus("Режим включен (SleepDisabled=1).", color: Palette.statusOK)
-            } else {
-                setStatus("Система не подтвердила включение.", color: Palette.statusWarn)
-                showInfo("Проверьте в терминале: pmset -g | awk '/SleepDisabled/ {print $2}'")
-            }
+            refreshStatus(showErrorAlert: true)
         } catch {
             showError(error)
         }
@@ -266,21 +454,39 @@ final class MainWindowController: NSWindowController {
     @objc private func disablePressed() {
         do {
             try PMSetService.disableNoSleep()
-            let value = try PMSetService.readSleepDisabled()
-            if value == 0 {
-                setStatus("Режим выключен (SleepDisabled=0).", color: Palette.statusOK)
-            } else {
-                setStatus("Система не подтвердила отключение.", color: Palette.statusWarn)
-                showInfo("Проверьте в терминале: pmset -g | awk '/SleepDisabled/ {print $2}'")
-            }
+            refreshStatus(showErrorAlert: true)
         } catch {
             showError(error)
         }
     }
 
-    private func setStatus(_ text: String, color: NSColor) {
+    @objc private func refreshPressed() {
+        refreshStatus(showErrorAlert: true)
+    }
+
+    private func refreshStatus(showErrorAlert: Bool) {
+        do {
+            let value = try PMSetService.readSleepDisabled()
+            switch value {
+            case 1:
+                setStatus("Сон отключен: Mac остается активным при закрытой крышке.", style: .enabled)
+            case 0:
+                setStatus("Стандартный режим: Mac засыпает при закрытой крышке.", style: .disabled)
+            default:
+                setStatus("Не удалось определить состояние SleepDisabled.", style: .warning)
+            }
+        } catch {
+            setStatus("Не удалось прочитать состояние SleepDisabled.", style: .warning)
+            if showErrorAlert {
+                showError(error)
+            }
+        }
+    }
+
+    private func setStatus(_ text: String, style: StatusStyle) {
+        statusStyle = style
         statusLabel.stringValue = text
-        statusLabel.textColor = color
+        applyTheme()
     }
 
     private func showError(_ error: Error) {
@@ -288,14 +494,6 @@ final class MainWindowController: NSWindowController {
         alert.alertStyle = .warning
         alert.messageText = "Не удалось выполнить команду"
         alert.informativeText = error.localizedDescription
-        alert.runModal()
-    }
-
-    private func showInfo(_ text: String) {
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = "LidGuard"
-        alert.informativeText = text
         alert.runModal()
     }
 }

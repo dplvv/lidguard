@@ -14,57 +14,118 @@ func rgb(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat, _ a: CGFloat = 1.0) -> NSColo
     NSColor(calibratedRed: r / 255.0, green: g / 255.0, blue: b / 255.0, alpha: a)
 }
 
+func shieldPath(in rect: NSRect) -> NSBezierPath {
+    let path = NSBezierPath()
+    let cx = rect.midX
+    path.move(to: NSPoint(x: cx, y: rect.maxY))
+    path.line(to: NSPoint(x: rect.maxX, y: rect.maxY - rect.height * 0.25))
+    path.curve(
+        to: NSPoint(x: cx, y: rect.minY),
+        controlPoint1: NSPoint(x: rect.maxX + rect.width * 0.03, y: rect.midY),
+        controlPoint2: NSPoint(x: cx + rect.width * 0.26, y: rect.minY + rect.height * 0.06)
+    )
+    path.curve(
+        to: NSPoint(x: rect.minX, y: rect.maxY - rect.height * 0.25),
+        controlPoint1: NSPoint(x: cx - rect.width * 0.26, y: rect.minY + rect.height * 0.06),
+        controlPoint2: NSPoint(x: rect.minX - rect.width * 0.03, y: rect.midY)
+    )
+    path.close()
+    return path
+}
+
 let image = NSImage(size: canvas.size, flipped: false) { rect in
-    let background = NSBezierPath(roundedRect: NSRect(x: 44, y: 44, width: 936, height: 936), xRadius: 220, yRadius: 220)
-    let gradient = NSGradient(colorsAndLocations:
-        (rgb(22, 102, 156), 0.0),
-        (rgb(36, 147, 120), 0.55),
-        (rgb(15, 74, 132), 1.0)
+    let tileRect = NSRect(x: 52, y: 52, width: 920, height: 920)
+    let tilePath = NSBezierPath(roundedRect: tileRect, xRadius: 210, yRadius: 210)
+
+    NSGraphicsContext.saveGraphicsState()
+    tilePath.addClip()
+
+    let baseGradient = NSGradient(colorsAndLocations:
+        (rgb(14, 30, 58), 0.0),
+        (rgb(22, 95, 168), 0.48),
+        (rgb(30, 183, 146), 1.0)
     )!
-    gradient.draw(in: background, angle: -58)
+    baseGradient.draw(in: tileRect, angle: -52)
 
-    // Soft highlight for depth.
-    let highlight = NSBezierPath(roundedRect: NSRect(x: 100, y: 520, width: 824, height: 380), xRadius: 160, yRadius: 160)
-    rgb(255, 255, 255, 0.12).setFill()
-    highlight.fill()
+    let glowRect = NSRect(x: 90, y: 560, width: 720, height: 430)
+    if let glow = NSGradient(starting: rgb(255, 255, 255, 0.24), ending: rgb(255, 255, 255, 0.02)) {
+        let glowPath = NSBezierPath(ovalIn: glowRect)
+        glow.draw(in: glowPath, relativeCenterPosition: NSPoint(x: -0.4, y: 0.3))
+    }
 
-    // Laptop base.
-    let base = NSBezierPath(roundedRect: NSRect(x: 190, y: 252, width: 644, height: 86), xRadius: 32, yRadius: 32)
-    rgb(250, 253, 255, 0.95).setFill()
+    let darkPlate = NSBezierPath(roundedRect: NSRect(x: 176, y: 202, width: 672, height: 198), xRadius: 84, yRadius: 84)
+    rgb(7, 18, 38, 0.27).setFill()
+    darkPlate.fill()
+
+    NSGraphicsContext.restoreGraphicsState()
+
+    let tileBorder = NSBezierPath(roundedRect: tileRect, xRadius: 210, yRadius: 210)
+    rgb(255, 255, 255, 0.34).setStroke()
+    tileBorder.lineWidth = 2
+    tileBorder.stroke()
+
+    let lid = NSBezierPath(roundedRect: NSRect(x: 236, y: 614, width: 552, height: 74), xRadius: 30, yRadius: 30)
+    rgb(244, 250, 255, 0.92).setFill()
+    lid.fill()
+
+    let lidSlot = NSBezierPath(roundedRect: NSRect(x: 300, y: 642, width: 424, height: 9), xRadius: 4.5, yRadius: 4.5)
+    rgb(35, 92, 143, 0.46).setFill()
+    lidSlot.fill()
+
+    let base = NSBezierPath(roundedRect: NSRect(x: 212, y: 252, width: 600, height: 94), xRadius: 34, yRadius: 34)
+    rgb(248, 252, 255, 0.97).setFill()
     base.fill()
 
-    // Laptop screen frame.
-    let screenOuter = NSBezierPath(roundedRect: NSRect(x: 230, y: 328, width: 564, height: 320), xRadius: 44, yRadius: 44)
-    rgb(250, 253, 255, 0.96).setFill()
-    screenOuter.fill()
+    let hinge = NSBezierPath(roundedRect: NSRect(x: 324, y: 286, width: 376, height: 8), xRadius: 4, yRadius: 4)
+    rgb(90, 122, 160, 0.56).setFill()
+    hinge.fill()
 
-    let screenInner = NSBezierPath(roundedRect: NSRect(x: 258, y: 356, width: 508, height: 264), xRadius: 28, yRadius: 28)
-    rgb(34, 82, 121, 0.92).setFill()
-    screenInner.fill()
+    let shieldOuterRect = NSRect(x: 296, y: 338, width: 432, height: 430)
+    let shieldOuter = shieldPath(in: shieldOuterRect)
 
-    // Shield body.
-    let shield = NSBezierPath()
-    shield.move(to: NSPoint(x: rect.midX, y: 760))
-    shield.line(to: NSPoint(x: 720, y: 682))
-    shield.curve(to: NSPoint(x: rect.midX, y: 430), controlPoint1: NSPoint(x: 728, y: 545), controlPoint2: NSPoint(x: 620, y: 448))
-    shield.curve(to: NSPoint(x: 304, y: 682), controlPoint1: NSPoint(x: 404, y: 448), controlPoint2: NSPoint(x: 296, y: 545))
-    shield.close()
-    rgb(233, 246, 255, 0.97).setFill()
-    shield.fill()
+    NSGraphicsContext.saveGraphicsState()
+    let shadow = NSShadow()
+    shadow.shadowColor = rgb(0, 0, 0, 0.24)
+    shadow.shadowBlurRadius = 18
+    shadow.shadowOffset = NSSize(width: 0, height: -5)
+    shadow.set()
+    rgb(242, 250, 255, 0.98).setFill()
+    shieldOuter.fill()
+    NSGraphicsContext.restoreGraphicsState()
 
-    // Lock icon inside shield.
-    let shackle = NSBezierPath(roundedRect: NSRect(x: 452, y: 612, width: 120, height: 108), xRadius: 48, yRadius: 48)
-    rgb(33, 94, 144, 0.95).setStroke()
-    shackle.lineWidth = 24
-    shackle.stroke()
+    let shieldInnerRect = shieldOuterRect.insetBy(dx: 30, dy: 34)
+    let shieldInner = shieldPath(in: shieldInnerRect)
+    let shieldGradient = NSGradient(colorsAndLocations:
+        (rgb(61, 159, 214), 0.0),
+        (rgb(42, 120, 210), 0.58),
+        (rgb(31, 92, 171), 1.0)
+    )!
+    shieldGradient.draw(in: shieldInner, angle: -90)
 
-    let lockBody = NSBezierPath(roundedRect: NSRect(x: 430, y: 520, width: 164, height: 132), xRadius: 28, yRadius: 28)
-    rgb(33, 94, 144, 0.95).setFill()
+    let lockBody = NSBezierPath(roundedRect: NSRect(x: rect.midX - 86, y: 500, width: 172, height: 132), xRadius: 34, yRadius: 34)
+    rgb(246, 252, 255, 0.98).setFill()
     lockBody.fill()
 
-    let keyHole = NSBezierPath(ovalIn: NSRect(x: 495, y: 560, width: 34, height: 34))
-    rgb(233, 246, 255, 0.98).setFill()
-    keyHole.fill()
+    let shacklePath = NSBezierPath()
+    shacklePath.lineCapStyle = .round
+    shacklePath.lineJoinStyle = .round
+    shacklePath.lineWidth = 26
+    shacklePath.move(to: NSPoint(x: rect.midX - 52, y: 622))
+    shacklePath.curve(
+        to: NSPoint(x: rect.midX + 52, y: 622),
+        controlPoint1: NSPoint(x: rect.midX - 52, y: 690),
+        controlPoint2: NSPoint(x: rect.midX + 52, y: 690)
+    )
+    rgb(246, 252, 255, 0.98).setStroke()
+    shacklePath.stroke()
+
+    let keyholeTop = NSBezierPath(ovalIn: NSRect(x: rect.midX - 14, y: 555, width: 28, height: 28))
+    rgb(31, 98, 173, 0.94).setFill()
+    keyholeTop.fill()
+
+    let keyholeStem = NSBezierPath(roundedRect: NSRect(x: rect.midX - 8, y: 532, width: 16, height: 30), xRadius: 8, yRadius: 8)
+    rgb(31, 98, 173, 0.94).setFill()
+    keyholeStem.fill()
 
     return true
 }

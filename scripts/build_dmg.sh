@@ -7,24 +7,43 @@ BUNDLE_ID="com.lidguard.app"
 VERSION="${VERSION:-0.1.0}"
 BUILD_DIR=".build/release"
 DIST_DIR="dist"
-STAGING_DIR=".build/dmg-staging"
+TEMP_ROOT=".build/tmp"
 APP_DIR="${DIST_DIR}/${APP_NAME}.app"
 DMG_PATH="${DIST_DIR}/${APP_NAME}.dmg"
-ICON_SOURCE=".build/LidGuard-1024.png"
-ICONSET_DIR=".build/AppIcon.iconset"
 ICON_NAME="AppIcon.icns"
+ICON_SOURCE=""
+ICONSET_DIR=""
+STAGING_DIR=""
 
-rm -rf "${DIST_DIR}" "${STAGING_DIR}"
-mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources" "${STAGING_DIR}"
+required_commands=(swift sips iconutil hdiutil)
+for cmd in "${required_commands[@]}"; do
+    if ! command -v "${cmd}" >/dev/null 2>&1; then
+        echo "Missing required command: ${cmd}" >&2
+        exit 1
+    fi
+done
+
+cleanup() {
+    [ -n "${STAGING_DIR}" ] && rm -rf "${STAGING_DIR}"
+    [ -n "${ICONSET_DIR}" ] && rm -rf "${ICONSET_DIR}"
+    [ -n "${ICON_SOURCE}" ] && rm -f "${ICON_SOURCE}"
+}
+trap cleanup EXIT
+
+rm -rf "${DIST_DIR}" ".build/AppIcon.iconset" ".build/dmg-staging"
+mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources" "${TEMP_ROOT}"
+
+STAGING_DIR="$(mktemp -d "${TEMP_ROOT}/dmg-staging.XXXXXX")"
+ICONSET_DIR="${TEMP_ROOT}/AppIcon.iconset"
+ICON_SOURCE="${TEMP_ROOT}/LidGuard-1024.png"
+rm -rf "${ICONSET_DIR}"
+mkdir -p "${ICONSET_DIR}"
 
 swift build --product "${PRODUCT_NAME}" --configuration release --disable-sandbox
 
 cp "${BUILD_DIR}/${PRODUCT_NAME}" "${APP_DIR}/Contents/MacOS/${APP_NAME}"
 
 swift scripts/generate_icon.swift "${ICON_SOURCE}"
-
-rm -rf "${ICONSET_DIR}"
-mkdir -p "${ICONSET_DIR}"
 
 sips -z 16 16 "${ICON_SOURCE}" --out "${ICONSET_DIR}/icon_16x16.png" >/dev/null
 sips -z 32 32 "${ICON_SOURCE}" --out "${ICONSET_DIR}/icon_16x16@2x.png" >/dev/null
