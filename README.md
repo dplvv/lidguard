@@ -41,12 +41,9 @@ swift build --product LidGuardGUI --configuration release --disable-sandbox
 
 На GitHub:
 
-1. Откройте вкладку **Actions**.
-2. Выберите workflow **Build DMG**.
-3. Нажмите **Run workflow**.
-4. После завершения скачайте artifact **LidGuard-dmg**.
-
-Workflow также запускается автоматически для тегов вида `v*`, например `v0.1.0`.
+1. Создайте и отправьте тег вида `v*`, например `v0.1.1`.
+2. Workflow **Build DMG** соберет приложение и прикрепит `LidGuard.dmg` к GitHub Release.
+3. Скачивайте файл напрямую из раздела **Releases**.
 
 ## Как это работает
 

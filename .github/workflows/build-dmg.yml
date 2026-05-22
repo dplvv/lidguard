@@ -1,10 +1,12 @@
 name: Build DMG
 
 on:
-  workflow_dispatch:
   push:
     tags:
       - "v*"
+
+permissions:
+  contents: write
 
 jobs:
   build-dmg:
@@ -21,9 +23,7 @@ jobs:
       - name: Build DMG
         run: ./scripts/build_dmg.sh
 
-      - name: Upload DMG artifact
-        uses: actions/upload-artifact@v4
+      - name: Publish DMG to release
+        uses: softprops/action-gh-release@v2
         with:
-          name: LidGuard-dmg
-          path: dist/LidGuard.dmg
-          if-no-files-found: error
+          files: dist/LidGuard.dmg
