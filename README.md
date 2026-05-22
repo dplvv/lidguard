@@ -73,6 +73,7 @@ pmset -g | awk '/SleepDisabled/ { print $2 }'
 ```text
 AppSource/LidGuardApp.swift   # Исходный код приложения
 Package.swift                 # Манифест Swift Package
+scripts/generate_icon.swift   # Генерация иконки приложения
 scripts/build_dmg.sh          # Сборка .app и DMG
 .github/workflows/build-dmg.yml # GitHub Actions сборка DMG
 ```
