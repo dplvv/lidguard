@@ -18,114 +18,91 @@ func shieldPath(in rect: NSRect) -> NSBezierPath {
     let path = NSBezierPath()
     let cx = rect.midX
     path.move(to: NSPoint(x: cx, y: rect.maxY))
-    path.line(to: NSPoint(x: rect.maxX, y: rect.maxY - rect.height * 0.25))
+    path.line(to: NSPoint(x: rect.maxX, y: rect.maxY - rect.height * 0.30))
     path.curve(
         to: NSPoint(x: cx, y: rect.minY),
-        controlPoint1: NSPoint(x: rect.maxX + rect.width * 0.03, y: rect.midY),
-        controlPoint2: NSPoint(x: cx + rect.width * 0.26, y: rect.minY + rect.height * 0.06)
+        controlPoint1: NSPoint(x: rect.maxX + rect.width * 0.02, y: rect.midY),
+        controlPoint2: NSPoint(x: cx + rect.width * 0.28, y: rect.minY + rect.height * 0.10)
     )
     path.curve(
-        to: NSPoint(x: rect.minX, y: rect.maxY - rect.height * 0.25),
-        controlPoint1: NSPoint(x: cx - rect.width * 0.26, y: rect.minY + rect.height * 0.06),
-        controlPoint2: NSPoint(x: rect.minX - rect.width * 0.03, y: rect.midY)
+        to: NSPoint(x: rect.minX, y: rect.maxY - rect.height * 0.30),
+        controlPoint1: NSPoint(x: cx - rect.width * 0.28, y: rect.minY + rect.height * 0.10),
+        controlPoint2: NSPoint(x: rect.minX - rect.width * 0.02, y: rect.midY)
     )
     path.close()
     return path
 }
 
+func strokeNeon(_ path: NSBezierPath, lineWidth: CGFloat, color: NSColor) {
+    path.lineJoinStyle = .round
+    path.lineCapStyle = .round
+
+    NSGraphicsContext.saveGraphicsState()
+    let outerGlow = NSShadow()
+    outerGlow.shadowColor = color.withAlphaComponent(0.50)
+    outerGlow.shadowBlurRadius = 30
+    outerGlow.shadowOffset = .zero
+    outerGlow.set()
+    color.setStroke()
+    path.lineWidth = lineWidth
+    path.stroke()
+    NSGraphicsContext.restoreGraphicsState()
+
+    NSGraphicsContext.saveGraphicsState()
+    let innerGlow = NSShadow()
+    innerGlow.shadowColor = color.withAlphaComponent(0.40)
+    innerGlow.shadowBlurRadius = 10
+    innerGlow.shadowOffset = .zero
+    innerGlow.set()
+    rgb(236, 255, 173, 0.95).setStroke()
+    path.lineWidth = max(2, lineWidth * 0.38)
+    path.stroke()
+    NSGraphicsContext.restoreGraphicsState()
+}
+
 let image = NSImage(size: canvas.size, flipped: false) { rect in
-    let tileRect = NSRect(x: 52, y: 52, width: 920, height: 920)
-    let tilePath = NSBezierPath(roundedRect: tileRect, xRadius: 210, yRadius: 210)
+    let tileRect = NSRect(x: 58, y: 58, width: 908, height: 908)
+    let tilePath = NSBezierPath(roundedRect: tileRect, xRadius: 190, yRadius: 190)
 
     NSGraphicsContext.saveGraphicsState()
     tilePath.addClip()
 
     let baseGradient = NSGradient(colorsAndLocations:
-        (rgb(14, 30, 58), 0.0),
-        (rgb(22, 95, 168), 0.48),
-        (rgb(30, 183, 146), 1.0)
+        (rgb(5, 7, 13), 0.0),
+        (rgb(6, 10, 20), 0.55),
+        (rgb(10, 16, 34), 1.0)
     )!
-    baseGradient.draw(in: tileRect, angle: -52)
+    baseGradient.draw(in: tileRect, angle: -90)
 
-    let glowRect = NSRect(x: 90, y: 560, width: 720, height: 430)
-    if let glow = NSGradient(starting: rgb(255, 255, 255, 0.24), ending: rgb(255, 255, 255, 0.02)) {
-        let glowPath = NSBezierPath(ovalIn: glowRect)
-        glow.draw(in: glowPath, relativeCenterPosition: NSPoint(x: -0.4, y: 0.3))
+    if let softLight = NSGradient(starting: rgb(25, 43, 96, 0.36), ending: rgb(6, 8, 14, 0.0)) {
+        let softLightPath = NSBezierPath(ovalIn: NSRect(x: 120, y: 540, width: 790, height: 510))
+        softLight.draw(in: softLightPath, relativeCenterPosition: NSPoint(x: -0.18, y: 0.30))
     }
 
-    let darkPlate = NSBezierPath(roundedRect: NSRect(x: 176, y: 202, width: 672, height: 198), xRadius: 84, yRadius: 84)
-    rgb(7, 18, 38, 0.27).setFill()
-    darkPlate.fill()
+    if let neonFog = NSGradient(starting: rgb(144, 255, 53, 0.11), ending: rgb(120, 210, 35, 0.0)) {
+        let fogPath = NSBezierPath(ovalIn: NSRect(x: 196, y: 150, width: 632, height: 560))
+        neonFog.draw(in: fogPath, relativeCenterPosition: .zero)
+    }
 
     NSGraphicsContext.restoreGraphicsState()
 
-    let tileBorder = NSBezierPath(roundedRect: tileRect, xRadius: 210, yRadius: 210)
-    rgb(255, 255, 255, 0.34).setStroke()
-    tileBorder.lineWidth = 2
+    let tileBorder = NSBezierPath(roundedRect: tileRect, xRadius: 190, yRadius: 190)
+    rgb(115, 124, 163, 0.28).setStroke()
+    tileBorder.lineWidth = 2.5
     tileBorder.stroke()
 
-    let lid = NSBezierPath(roundedRect: NSRect(x: 236, y: 614, width: 552, height: 74), xRadius: 30, yRadius: 30)
-    rgb(244, 250, 255, 0.92).setFill()
-    lid.fill()
+    let neon = rgb(176, 255, 56, 1.0)
+    let shield = shieldPath(in: NSRect(x: 232, y: 212, width: 560, height: 560))
+    strokeNeon(shield, lineWidth: 26, color: neon)
 
-    let lidSlot = NSBezierPath(roundedRect: NSRect(x: 300, y: 642, width: 424, height: 9), xRadius: 4.5, yRadius: 4.5)
-    rgb(35, 92, 143, 0.46).setFill()
-    lidSlot.fill()
+    let screen = NSBezierPath(roundedRect: NSRect(x: 378, y: 442, width: 268, height: 165), xRadius: 24, yRadius: 24)
+    strokeNeon(screen, lineWidth: 20, color: neon)
 
-    let base = NSBezierPath(roundedRect: NSRect(x: 212, y: 252, width: 600, height: 94), xRadius: 34, yRadius: 34)
-    rgb(248, 252, 255, 0.97).setFill()
-    base.fill()
+    let base = NSBezierPath(roundedRect: NSRect(x: 307, y: 360, width: 410, height: 30), xRadius: 16, yRadius: 16)
+    strokeNeon(base, lineWidth: 10, color: neon)
 
-    let hinge = NSBezierPath(roundedRect: NSRect(x: 324, y: 286, width: 376, height: 8), xRadius: 4, yRadius: 4)
-    rgb(90, 122, 160, 0.56).setFill()
-    hinge.fill()
-
-    let shieldOuterRect = NSRect(x: 296, y: 338, width: 432, height: 430)
-    let shieldOuter = shieldPath(in: shieldOuterRect)
-
-    NSGraphicsContext.saveGraphicsState()
-    let shadow = NSShadow()
-    shadow.shadowColor = rgb(0, 0, 0, 0.24)
-    shadow.shadowBlurRadius = 18
-    shadow.shadowOffset = NSSize(width: 0, height: -5)
-    shadow.set()
-    rgb(242, 250, 255, 0.98).setFill()
-    shieldOuter.fill()
-    NSGraphicsContext.restoreGraphicsState()
-
-    let shieldInnerRect = shieldOuterRect.insetBy(dx: 30, dy: 34)
-    let shieldInner = shieldPath(in: shieldInnerRect)
-    let shieldGradient = NSGradient(colorsAndLocations:
-        (rgb(61, 159, 214), 0.0),
-        (rgb(42, 120, 210), 0.58),
-        (rgb(31, 92, 171), 1.0)
-    )!
-    shieldGradient.draw(in: shieldInner, angle: -90)
-
-    let lockBody = NSBezierPath(roundedRect: NSRect(x: rect.midX - 86, y: 500, width: 172, height: 132), xRadius: 34, yRadius: 34)
-    rgb(246, 252, 255, 0.98).setFill()
-    lockBody.fill()
-
-    let shacklePath = NSBezierPath()
-    shacklePath.lineCapStyle = .round
-    shacklePath.lineJoinStyle = .round
-    shacklePath.lineWidth = 26
-    shacklePath.move(to: NSPoint(x: rect.midX - 52, y: 622))
-    shacklePath.curve(
-        to: NSPoint(x: rect.midX + 52, y: 622),
-        controlPoint1: NSPoint(x: rect.midX - 52, y: 690),
-        controlPoint2: NSPoint(x: rect.midX + 52, y: 690)
-    )
-    rgb(246, 252, 255, 0.98).setStroke()
-    shacklePath.stroke()
-
-    let keyholeTop = NSBezierPath(ovalIn: NSRect(x: rect.midX - 14, y: 555, width: 28, height: 28))
-    rgb(31, 98, 173, 0.94).setFill()
-    keyholeTop.fill()
-
-    let keyholeStem = NSBezierPath(roundedRect: NSRect(x: rect.midX - 8, y: 532, width: 16, height: 30), xRadius: 8, yRadius: 8)
-    rgb(31, 98, 173, 0.94).setFill()
-    keyholeStem.fill()
+    let notch = NSBezierPath(roundedRect: NSRect(x: 466, y: 376, width: 92, height: 16), xRadius: 8, yRadius: 8)
+    strokeNeon(notch, lineWidth: 7, color: neon)
 
     return true
 }
