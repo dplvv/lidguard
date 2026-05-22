@@ -6,6 +6,9 @@
 .swiftpm/
 Package.resolved
 
+# Build artifacts
+dist/
+
 # Xcode
 DerivedData/
 *.xcworkspace

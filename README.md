@@ -29,6 +29,25 @@ swift build --product LidGuardGUI --configuration release --disable-sandbox
 ./.build/release/LidGuardGUI
 ```
 
+## Сборка DMG
+
+Локально:
+
+```bash
+./scripts/build_dmg.sh
+```
+
+Готовый файл появится в `dist/LidGuard.dmg`.
+
+На GitHub:
+
+1. Откройте вкладку **Actions**.
+2. Выберите workflow **Build DMG**.
+3. Нажмите **Run workflow**.
+4. После завершения скачайте artifact **LidGuard-dmg**.
+
+Workflow также запускается автоматически для тегов вида `v*`, например `v0.1.0`.
+
 ## Как это работает
 
 LidGuard выполняет только три команды:
@@ -54,6 +73,8 @@ pmset -g | awk '/SleepDisabled/ { print $2 }'
 ```text
 AppSource/LidGuardApp.swift   # Исходный код приложения
 Package.swift                 # Манифест Swift Package
+scripts/build_dmg.sh          # Сборка .app и DMG
+.github/workflows/build-dmg.yml # GitHub Actions сборка DMG
 ```
 
 ## Лицензия
